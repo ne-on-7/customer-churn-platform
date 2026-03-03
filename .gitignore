@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.DS_Store
+venv/
+models/*.pkl
+models/*.pt
+models/*.json
+models/*.txt
+data/processed/
+plots/
+.env
+*.egg-info/
+dist/
+build/
