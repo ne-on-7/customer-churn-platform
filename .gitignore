@@ -12,3 +12,4 @@ plots/
 *.egg-info/
 dist/
 build/
+*.pdf

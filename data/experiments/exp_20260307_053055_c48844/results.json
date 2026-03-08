@@ -1,0 +1,90 @@
+{
+  "experiment_id": "exp_20260307_053055_c48844",
+  "completed_at": "2026-03-07T05:30:55.909836",
+  "outcomes": {
+    "control": {
+      "n": 1713,
+      "churned": 1190,
+      "retained": 523,
+      "churn_rate": 0.6947
+    },
+    "treatment": {
+      "n": 1714,
+      "churned": 935,
+      "retained": 779,
+      "churn_rate": 0.5455
+    }
+  },
+  "statistical_analysis": {
+    "absolute_lift": -0.1492,
+    "relative_lift": -0.2148,
+    "z_statistic": -8.9976,
+    "p_value": 0.0,
+    "confidence_interval_95": [
+      -0.1813,
+      -0.1171
+    ],
+    "is_significant": true,
+    "chi_squared": 80.9346,
+    "chi_squared_p_value": 0.0,
+    "effect_size_cohens_h": -0.3089,
+    "number_needed_to_treat": 6.7
+  },
+  "business_impact": {
+    "customers_retained_by_intervention": 255,
+    "revenue_saved": 99450.0,
+    "intervention_cost": 34280.0,
+    "net_roi": 65170.0,
+    "roi_percent": 190.1
+  },
+  "segment_breakdown": [
+    {
+      "segment": "tenure_bucket=0",
+      "control_n": 882,
+      "treatment_n": 883,
+      "control_churn_rate": 0.7313,
+      "treatment_churn_rate": 0.6353,
+      "relative_lift": -0.1312
+    },
+    {
+      "segment": "tenure_bucket=1",
+      "control_n": 300,
+      "treatment_n": 300,
+      "control_churn_rate": 0.6967,
+      "treatment_churn_rate": 0.5033,
+      "relative_lift": -0.2775
+    },
+    {
+      "segment": "tenure_bucket=2",
+      "control_n": 338,
+      "treatment_n": 338,
+      "control_churn_rate": 0.6657,
+      "treatment_churn_rate": 0.4379,
+      "relative_lift": -0.3422
+    },
+    {
+      "segment": "tenure_bucket=3",
+      "control_n": 193,
+      "treatment_n": 193,
+      "control_churn_rate": 0.5751,
+      "treatment_churn_rate": 0.3886,
+      "relative_lift": -0.3243
+    },
+    {
+      "segment": "contract_risk_score=1",
+      "control_n": 123,
+      "treatment_n": 138,
+      "control_churn_rate": 0.5203,
+      "treatment_churn_rate": 0.3261,
+      "relative_lift": -0.3733
+    },
+    {
+      "segment": "contract_risk_score=2",
+      "control_n": 1589,
+      "treatment_n": 1576,
+      "control_churn_rate": 0.708,
+      "treatment_churn_rate": 0.5647,
+      "relative_lift": -0.2024
+    }
+  ]
+}

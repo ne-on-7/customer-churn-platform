@@ -11,7 +11,7 @@ import pandas as pd
 import joblib
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 # Add project root to path
 PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -20,6 +20,12 @@ sys.path.insert(0, PROJECT_DIR)
 from src.feature_engineering import add_engineered_features
 from src.evaluate import load_trained_models
 from src.explain import local_explanation, get_top_reasons
+from src.experimentation import (
+    create_experiment as run_experiment,
+    list_experiments as get_experiments,
+    load_experiment,
+    compute_power_analysis,
+)
 
 app = FastAPI(
     title="Customer Churn Intelligence API",
@@ -182,6 +188,89 @@ def predict(customer: CustomerInput):
         top_reasons=top_reasons,
         model_used=best_name,
     )
+
+
+# ──────────────────────────────────────────────────────────────
+# A/B TESTING ENDPOINTS
+# ──────────────────────────────────────────────────────────────
+
+class ExperimentCreate(BaseModel):
+    name: str = Field(..., description="Human-readable experiment name")
+    intervention_type: str = Field(..., description="discount | personalized_email | service_upgrade | loyalty_program")
+    intervention_description: str = Field("", description="Free-text description")
+    expected_effect_size: float = Field(0.15, ge=0.01, le=0.50)
+    cost_per_customer: float = Field(20.0, ge=0.0)
+    risk_tiers: List[str] = Field(["High"], description="Target risk tiers")
+    feature_filters: Optional[dict] = None
+    split_ratio: float = Field(0.5, ge=0.1, le=0.9)
+    significance_level: float = Field(0.05, ge=0.01, le=0.10)
+    power: float = Field(0.80, ge=0.70, le=0.99)
+    random_seed: int = Field(42)
+    avg_monthly_revenue: float = Field(65.0, ge=1.0)
+    months_saved: int = Field(6, ge=1, le=24)
+
+
+class PowerAnalysisRequest(BaseModel):
+    baseline_churn_rate: float = Field(..., ge=0.01, le=0.99)
+    minimum_detectable_effect: float = Field(..., ge=0.01, le=0.50)
+    alpha: float = Field(0.05, ge=0.01, le=0.10)
+    power: float = Field(0.80, ge=0.70, le=0.99)
+    eligible_population: int = Field(0, ge=0)
+
+
+@app.post("/experiments")
+def create_experiment_endpoint(config: ExperimentCreate):
+    """Create and run a new A/B test experiment."""
+    try:
+        result = run_experiment(
+            name=config.name,
+            intervention_type=config.intervention_type,
+            intervention_description=config.intervention_description,
+            expected_effect_size=config.expected_effect_size,
+            cost_per_customer=config.cost_per_customer,
+            risk_tiers=config.risk_tiers,
+            feature_filters=config.feature_filters,
+            split_ratio=config.split_ratio,
+            significance_level=config.significance_level,
+            power=config.power,
+            random_seed=config.random_seed,
+            avg_monthly_revenue=config.avg_monthly_revenue,
+            months_saved=config.months_saved,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/experiments")
+def list_experiments_endpoint():
+    """List all experiments with summary statistics."""
+    return get_experiments()
+
+
+@app.get("/experiments/{experiment_id}")
+def get_experiment_endpoint(experiment_id: str):
+    """Get full experiment details including statistical results."""
+    try:
+        return load_experiment(experiment_id)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/experiments/power-analysis")
+def power_analysis_endpoint(request: PowerAnalysisRequest):
+    """Standalone power analysis calculator."""
+    from dataclasses import asdict
+    result = compute_power_analysis(
+        baseline_churn_rate=request.baseline_churn_rate,
+        minimum_detectable_effect=request.minimum_detectable_effect,
+        alpha=request.alpha,
+        power=request.power,
+        eligible_population=request.eligible_population,
+    )
+    return asdict(result)
 
 
 if __name__ == "__main__":

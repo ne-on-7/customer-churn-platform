@@ -23,6 +23,12 @@ from src.data_processing import load_raw_data, encode_features
 from src.feature_engineering import add_engineered_features
 from src.evaluate import load_trained_models
 from src.explain import local_explanation, get_top_reasons
+from src.experimentation import (
+    create_experiment,
+    list_experiments,
+    load_experiment,
+    compute_power_analysis,
+)
 
 MODELS_DIR = os.path.join(PROJECT_DIR, "models")
 
@@ -53,7 +59,7 @@ def load_data():
 # Sidebar
 st.sidebar.title("Customer Churn Intelligence")
 st.sidebar.markdown("---")
-tab = st.sidebar.radio("Navigate", ["Predict", "Model Comparison", "Data Explorer", "Business Impact"])
+tab = st.sidebar.radio("Navigate", ["Predict", "Model Comparison", "Data Explorer", "Business Impact", "A/B Testing"])
 
 try:
     feature_names, scaler, best_name, models = load_models()
@@ -318,3 +324,288 @@ elif tab == "Business Impact" and models_loaded:
         - **{impact['false_negatives']}** churning customers missed → lost **${impact['missed_revenue']:,.0f}**
         - **{impact['false_positives']}** unnecessary offers sent → wasted **${impact['false_positives'] * retention_cost:,.0f}**
         """)
+
+
+# ──────────────────────────────────────────────────────────────
+# TAB 5: A/B TESTING
+# ──────────────────────────────────────────────────────────────
+elif tab == "A/B Testing" and models_loaded:
+    st.title("A/B Testing & Experimentation")
+    st.markdown("Design and run retention experiments on churn-prone customer segments.")
+
+    ab_tab1, ab_tab2, ab_tab3, ab_tab4 = st.tabs([
+        "Create Experiment", "Power Analysis", "Experiment Results", "Experiment History"
+    ])
+
+    # ── Sub-tab 1: Create Experiment ──
+    with ab_tab1:
+        st.subheader("Design a New Experiment")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            exp_name = st.text_input("Experiment Name", "Discount for High-Risk Customers")
+            intervention_type = st.selectbox("Intervention Type", [
+                "discount", "personalized_email", "service_upgrade", "loyalty_program"
+            ])
+            intervention_desc = st.text_input("Description", "20% monthly discount for 3 months")
+            expected_effect = st.slider("Expected Effect Size (absolute churn reduction)", 0.01, 0.50, 0.15, 0.01)
+            cost_per = st.number_input("Cost per Customer ($)", 0.0, 500.0, 20.0)
+
+        with col2:
+            risk_tiers = st.multiselect("Target Risk Tiers", ["High", "Medium", "Low"], default=["High"])
+            split_ratio = st.slider("Treatment Group Ratio", 0.1, 0.9, 0.5, 0.05)
+            sig_level = st.select_slider("Significance Level (alpha)", [0.01, 0.05, 0.10], value=0.05)
+            power_level = st.select_slider("Statistical Power", [0.70, 0.75, 0.80, 0.85, 0.90, 0.95], value=0.80)
+            seed = st.number_input("Random Seed", 1, 9999, 42)
+            avg_rev = st.number_input("Avg Monthly Revenue ($)", 1.0, 500.0, 65.0)
+            months = st.slider("Months of Revenue Saved", 1, 24, 6)
+
+        if st.button("Create & Run Experiment", type="primary"):
+            with st.spinner("Running experiment..."):
+                try:
+                    result = create_experiment(
+                        name=exp_name,
+                        intervention_type=intervention_type,
+                        intervention_description=intervention_desc,
+                        expected_effect_size=expected_effect,
+                        cost_per_customer=cost_per,
+                        risk_tiers=risk_tiers,
+                        split_ratio=split_ratio,
+                        significance_level=sig_level,
+                        power=power_level,
+                        random_seed=int(seed),
+                        avg_monthly_revenue=avg_rev,
+                        months_saved=months,
+                    )
+
+                    config = result["config"]
+                    res = result["results"]
+                    sa = res["statistical_analysis"]
+                    bi = res["business_impact"]
+
+                    st.success(f"Experiment created: **{config['experiment_id']}**")
+
+                    # Summary metrics
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Control Churn Rate", f"{res['outcomes']['control']['churn_rate']:.1%}")
+                    m2.metric("Treatment Churn Rate", f"{res['outcomes']['treatment']['churn_rate']:.1%}")
+                    m3.metric("Absolute Lift", f"{sa['absolute_lift']:.1%}")
+                    m4.metric("P-Value", f"{sa['p_value']:.4f}")
+
+                    if sa["is_significant"]:
+                        st.success(f"Result is **statistically significant** at alpha={sig_level}.")
+                    else:
+                        st.warning(f"Result is **not statistically significant** at alpha={sig_level}.")
+
+                    st.markdown(f"""
+                    **Business Impact:** {bi['customers_retained_by_intervention']} additional customers retained |
+                    Revenue saved: ${bi['revenue_saved']:,.0f} |
+                    Cost: ${bi['intervention_cost']:,.0f} |
+                    Net ROI: ${bi['net_roi']:,.0f} ({bi['roi_percent']}%)
+                    """)
+
+                except Exception as e:
+                    st.error(f"Failed to create experiment: {e}")
+
+    # ── Sub-tab 2: Power Analysis Calculator ──
+    with ab_tab2:
+        st.subheader("Power Analysis Calculator")
+        st.markdown("Determine the sample size needed to detect a given effect with statistical confidence.")
+
+        pa_col1, pa_col2 = st.columns(2)
+        with pa_col1:
+            pa_baseline = st.slider("Baseline Churn Rate", 0.05, 0.95, 0.42, 0.01, key="pa_baseline")
+            pa_mde = st.slider("Minimum Detectable Effect", 0.01, 0.40, 0.10, 0.01, key="pa_mde")
+        with pa_col2:
+            pa_alpha = st.select_slider("Significance Level", [0.01, 0.05, 0.10], value=0.05, key="pa_alpha")
+            pa_power = st.select_slider("Power", [0.70, 0.75, 0.80, 0.85, 0.90, 0.95], value=0.80, key="pa_power")
+
+        pa_result = compute_power_analysis(pa_baseline, pa_mde, pa_alpha, pa_power)
+
+        r1, r2, r3 = st.columns(3)
+        r1.metric("Required per Group", f"{pa_result.required_sample_size_per_group:,}")
+        r2.metric("Total Required", f"{pa_result.total_required:,}")
+        r3.metric("Power", f"{pa_result.achieved_power:.0%}")
+
+        # Sample size vs effect size curve
+        st.subheader("Sample Size vs. Effect Size")
+        effect_sizes = np.arange(0.02, 0.41, 0.01)
+        sample_sizes = []
+        for es in effect_sizes:
+            pa_temp = compute_power_analysis(pa_baseline, es, pa_alpha, pa_power)
+            sample_sizes.append(pa_temp.required_sample_size_per_group)
+
+        fig_pa = go.Figure()
+        fig_pa.add_trace(go.Scatter(
+            x=effect_sizes, y=sample_sizes,
+            mode="lines", name="Required n per group",
+            line=dict(color="#3498db", width=3),
+        ))
+        fig_pa.add_vline(x=pa_mde, line_dash="dash", line_color="red",
+                         annotation_text=f"Selected MDE = {pa_mde:.2f}")
+        fig_pa.update_layout(
+            xaxis_title="Minimum Detectable Effect (absolute)",
+            yaxis_title="Required Sample Size per Group",
+            title="How Effect Size Impacts Required Sample Size",
+            height=400,
+        )
+        st.plotly_chart(fig_pa, use_container_width=True)
+
+    # ── Sub-tab 3: Experiment Results ──
+    with ab_tab3:
+        st.subheader("Experiment Results")
+
+        experiments = list_experiments()
+        if not experiments:
+            st.info("No experiments yet. Create one in the 'Create Experiment' tab.")
+        else:
+            exp_names = {e["experiment_id"]: f"{e['name']} ({e['experiment_id']})" for e in experiments}
+            selected_id = st.selectbox("Select Experiment", list(exp_names.keys()),
+                                       format_func=lambda x: exp_names[x])
+
+            exp_data = load_experiment(selected_id)
+            config = exp_data["config"]
+            results = exp_data.get("results", {})
+
+            if not results:
+                st.warning("This experiment has no results yet.")
+            else:
+                outcomes = results["outcomes"]
+                sa = results["statistical_analysis"]
+                bi = results["business_impact"]
+
+                # Significance banner
+                if sa["is_significant"]:
+                    st.success(
+                        f"**Statistically Significant** (p = {sa['p_value']:.4f} < "
+                        f"alpha = {config['design']['significance_level']}). "
+                        f"The intervention reduced churn by {abs(sa['absolute_lift']):.1%} "
+                        f"(relative: {abs(sa['relative_lift']):.1%})."
+                    )
+                else:
+                    st.warning(
+                        f"**Not Statistically Significant** (p = {sa['p_value']:.4f} >= "
+                        f"alpha = {config['design']['significance_level']}). "
+                        f"Cannot conclude the intervention had an effect."
+                    )
+
+                # Key metrics row
+                m1, m2, m3, m4, m5 = st.columns(5)
+                m1.metric("Absolute Lift", f"{sa['absolute_lift']:.1%}")
+                m2.metric("P-Value", f"{sa['p_value']:.4f}")
+                m3.metric("95% CI", f"[{sa['confidence_interval_95'][0]:.1%}, {sa['confidence_interval_95'][1]:.1%}]")
+                m4.metric("NNT", f"{sa['number_needed_to_treat']:.1f}")
+                m5.metric("Cohen's h", f"{sa['effect_size_cohens_h']:.3f}")
+
+                st.markdown("---")
+
+                # Chart 1: Churn rate comparison with CI
+                st.subheader("Churn Rate: Control vs Treatment")
+                ci = sa["confidence_interval_95"]
+                fig_compare = go.Figure()
+
+                ctrl_rate = outcomes["control"]["churn_rate"]
+                treat_rate = outcomes["treatment"]["churn_rate"]
+
+                fig_compare.add_trace(go.Bar(
+                    x=["Control", "Treatment"],
+                    y=[ctrl_rate, treat_rate],
+                    marker_color=["#e74c3c", "#2ecc71"],
+                    text=[f"{ctrl_rate:.1%}", f"{treat_rate:.1%}"],
+                    textposition="outside",
+                    error_y=dict(
+                        type="data",
+                        array=[
+                            1.96 * np.sqrt(ctrl_rate * (1 - ctrl_rate) / outcomes["control"]["n"]),
+                            1.96 * np.sqrt(treat_rate * (1 - treat_rate) / outcomes["treatment"]["n"]),
+                        ],
+                        visible=True,
+                    ),
+                ))
+                fig_compare.update_layout(
+                    yaxis_title="Churn Rate",
+                    yaxis_tickformat=".0%",
+                    title=f"Intervention: {config['intervention']['type'].replace('_', ' ').title()}",
+                    height=400,
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_compare, use_container_width=True)
+
+                # Chart 2: Segment breakdown
+                segments = results.get("segment_breakdown", [])
+                if segments:
+                    st.subheader("Segment Breakdown")
+
+                    seg_df = pd.DataFrame(segments)
+                    fig_seg = go.Figure()
+                    fig_seg.add_trace(go.Bar(
+                        name="Control",
+                        x=seg_df["segment"],
+                        y=seg_df["control_churn_rate"],
+                        marker_color="#e74c3c",
+                    ))
+                    fig_seg.add_trace(go.Bar(
+                        name="Treatment",
+                        x=seg_df["segment"],
+                        y=seg_df["treatment_churn_rate"],
+                        marker_color="#2ecc71",
+                    ))
+                    fig_seg.update_layout(
+                        barmode="group",
+                        yaxis_title="Churn Rate",
+                        yaxis_tickformat=".0%",
+                        title="Churn Rate by Segment: Control vs Treatment",
+                        height=400,
+                    )
+                    st.plotly_chart(fig_seg, use_container_width=True)
+
+                # Chart 3: ROI Waterfall
+                st.subheader("Business Impact (ROI Waterfall)")
+                fig_waterfall = go.Figure(go.Waterfall(
+                    name="ROI",
+                    orientation="v",
+                    x=["Revenue Saved", "Intervention Cost", "Net ROI"],
+                    y=[bi["revenue_saved"], -bi["intervention_cost"], bi["net_roi"]],
+                    measure=["relative", "relative", "total"],
+                    connector={"line": {"color": "rgb(63, 63, 63)"}},
+                    text=[f"${bi['revenue_saved']:,.0f}",
+                          f"-${bi['intervention_cost']:,.0f}",
+                          f"${bi['net_roi']:,.0f}"],
+                    textposition="outside",
+                    decreasing={"marker": {"color": "#e74c3c"}},
+                    increasing={"marker": {"color": "#2ecc71"}},
+                    totals={"marker": {"color": "#3498db"}},
+                ))
+                fig_waterfall.update_layout(
+                    title=f"Experiment ROI: {bi['roi_percent']}%",
+                    yaxis_title="Amount ($)",
+                    height=400,
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_waterfall, use_container_width=True)
+
+    # ── Sub-tab 4: Experiment History ──
+    with ab_tab4:
+        st.subheader("Experiment History")
+
+        experiments = list_experiments()
+        if not experiments:
+            st.info("No experiments yet. Create one in the 'Create Experiment' tab.")
+        else:
+            hist_data = []
+            for e in experiments:
+                row = {
+                    "Name": e["name"],
+                    "Status": e["status"],
+                    "Intervention": e.get("intervention_type", ""),
+                    "Risk Tiers": ", ".join(e.get("risk_tiers", [])),
+                    "Sample Size": e.get("sample_size", "—"),
+                    "Lift": f"{e['absolute_lift']:.1%}" if e.get("absolute_lift") is not None else "—",
+                    "P-Value": f"{e['p_value']:.4f}" if e.get("p_value") is not None else "—",
+                    "Significant": "Yes" if e.get("is_significant") else "No",
+                    "ROI %": f"{e['roi_percent']}%" if e.get("roi_percent") is not None else "—",
+                }
+                hist_data.append(row)
+
+            hist_df = pd.DataFrame(hist_data)
+            st.dataframe(hist_df, use_container_width=True, hide_index=True)
