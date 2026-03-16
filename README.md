@@ -1,4 +1,4 @@
-# Customer Churn Intelligence Platform
+# 📉 Customer Churn Intelligence Platform
 
 A full-stack ML platform that predicts customer churn, explains predictions with SHAP, and serves results through a REST API and interactive React dashboard with an AI-powered chat assistant.
 
@@ -8,38 +8,38 @@ Built on the **IBM Telco Customer Churn dataset** (7,043 customers) — from exp
 
 ---
 
-## Features
+## ✨ Features
 
-**AI Chat Assistant**
+**🤖 AI Chat Assistant**
 - Natural language interface powered by Claude API with tool use
 - Ask questions like "What's the churn risk for a senior citizen on month-to-month?" and get real-time predictions
 - SSE streaming for responsive, real-time answers
 
-**ML Pipeline**
+**🔬 ML Pipeline**
 - 5-model comparison: Logistic Regression, Random Forest, XGBoost, Gradient Boosting, PyTorch Neural Network
 - 5-fold stratified cross-validation with class balancing
 - 7 business-driven engineered features (tenure buckets, spend trends, contract risk scores)
 
-**Explainability**
+**🔍 Explainability**
 - SHAP-based global feature importance and per-customer explanations
 - Top 3 churn reasons returned with every prediction
 
-**Experimentation**
+**🧪 Experimentation**
 - A/B testing framework with 4 intervention types (discount, email, upgrade, loyalty program)
 - Power analysis, statistical significance testing, and segment-level breakdowns
 
-**Dashboard**
+**📊 Dashboard**
 - React + Tailwind CSS frontend with dark mode
 - 9 views: AI Chat, Predict, Models, Explorer, Impact, A/B Testing, Watchlist, History, Batch Upload
 - Customer risk watchlist, batch CSV predictions, and prediction audit log
 
-**Deployment**
+**🚀 Deployment**
 - FastAPI REST API with interactive docs
 - Dockerized multi-stage build (Node + Python)
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 customer-churn-platform/
@@ -71,7 +71,7 @@ customer-churn-platform/
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Install dependencies
 
@@ -112,7 +112,7 @@ cd frontend && npm run dev
 
 Open `http://localhost:5173`
 
-### Docker
+### 🐳 Docker
 
 ```bash
 docker build -t churn-platform .
@@ -123,7 +123,7 @@ Open `http://localhost:8000`
 
 ---
 
-## API Reference
+## 🔌 API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -146,27 +146,27 @@ Open `http://localhost:8000`
 
 ---
 
-## Dashboard
+## 📊 Dashboard
 
 The React dashboard (`http://localhost:5173` in dev, `http://localhost:8000` in production) has 9 views:
 
-- **AI Chat** — Ask natural language questions about churn, powered by Claude with tool use
-- **Predict** — Input customer details, get real-time churn probability with risk tier and SHAP-based reasons
-- **Models** — Side-by-side metrics, ROC curves, PR curves for all 5 models
-- **Explorer** — Dataset statistics, churn rates by segment, feature distributions
-- **Impact** — Revenue impact calculator with confusion matrix breakdown
-- **A/B Testing** — Create experiments, power analysis, results visualization, experiment history
-- **Watchlist** — Top-N highest churn risk customers with scores and recommended actions
-- **History** — Audit log of all predictions made
-- **Batch** — Upload CSV for bulk predictions with downloadable results
+- 💬 **AI Chat** — Ask natural language questions about churn, powered by Claude with tool use
+- 🎯 **Predict** — Input customer details, get real-time churn probability with risk tier and SHAP-based reasons
+- 📈 **Models** — Side-by-side metrics, ROC curves, PR curves for all 5 models
+- 🗂️ **Explorer** — Dataset statistics, churn rates by segment, feature distributions
+- 💼 **Impact** — Revenue impact calculator with confusion matrix breakdown
+- 🧪 **A/B Testing** — Create experiments, power analysis, results visualization, experiment history
+- 👀 **Watchlist** — Top-N highest churn risk customers with scores and recommended actions
+- 📜 **History** — Audit log of all predictions made
+- 📤 **Batch** — Upload CSV for bulk predictions with downloadable results
 
 ---
 
-## Model Performance
+## 🧠 Model Performance
 
 | Model | ROC-AUC | Notes |
 |-------|---------|-------|
-| **Logistic Regression** | **0.8468** | Best performer |
+| **Logistic Regression** | **0.8468** | ⭐ Best performer |
 | Random Forest | 0.8347 | |
 | Gradient Boosting | 0.8277 | |
 | XGBoost | 0.8276 | |
@@ -174,7 +174,7 @@ The React dashboard (`http://localhost:5173` in dev, `http://localhost:8000` in 
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -190,6 +190,6 @@ The React dashboard (`http://localhost:5173` in dev, `http://localhost:8000` in 
 
 ---
 
-## Author
+## 👤 Author
 
 **Pratheek Annadanam**
