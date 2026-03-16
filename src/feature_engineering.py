@@ -14,7 +14,7 @@ def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
     # Tenure bucket: groups customers by relationship length
     df["tenure_bucket"] = pd.cut(
         df["tenure"],
-        bins=[-1, 12, 24, 48, 72],
+        bins=[-1, 12, 24, 48, np.inf],
         labels=[0, 1, 2, 3]  # 0=new, 1=growing, 2=established, 3=loyal
     ).astype(int)
 

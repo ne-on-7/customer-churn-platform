@@ -70,9 +70,7 @@ class PyTorchChurnClassifier:
         X_t = torch.FloatTensor(np.array(X)).to(self.device)
         y_t = torch.FloatTensor(np.array(y)).to(self.device)
 
-        # Class weights for imbalanced data
         pos_weight = (y_t == 0).sum() / (y_t == 1).sum()
-        criterion = nn.BCELoss(weight=None)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 

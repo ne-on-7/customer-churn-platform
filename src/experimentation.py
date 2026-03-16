@@ -21,7 +21,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 MODELS_DIR = os.path.join(PROJECT_DIR, "models")
 EXPERIMENTS_DIR = os.path.join(PROJECT_DIR, "data", "experiments")
 
-RISK_THRESHOLDS = {"High": 0.7, "Medium": 0.4, "Low": 0.0}
+RISK_THRESHOLDS = {"High": 0.5, "Medium": 0.2, "Low": 0.0}
 
 INTERVENTION_PROFILES = {
     "discount": {
@@ -108,10 +108,10 @@ def get_eligible_customers(
     df = X_data.copy()
     df["churn_probability"] = y_proba
 
-    # Assign risk tiers
+    # Assign risk tiers using shared thresholds
     df["risk_tier"] = "Low"
-    df.loc[df["churn_probability"] >= 0.4, "risk_tier"] = "Medium"
-    df.loc[df["churn_probability"] >= 0.7, "risk_tier"] = "High"
+    df.loc[df["churn_probability"] >= RISK_THRESHOLDS["Medium"], "risk_tier"] = "Medium"
+    df.loc[df["churn_probability"] >= RISK_THRESHOLDS["High"], "risk_tier"] = "High"
 
     # Filter by risk tier
     if risk_tiers:
@@ -355,6 +355,12 @@ def _load_data_and_predictions():
     best_name = open(os.path.join(MODELS_DIR, "best_model.txt")).read().strip()
     models = load_trained_models(input_dim=len(feature_names))
     model = models[best_name]
+
+    # Use calibrated model if available for consistent probabilities with API
+    safe_best = best_name.lower().replace(" ", "_")
+    calibrated_path = os.path.join(MODELS_DIR, f"{safe_best}_calibrated.pkl")
+    if os.path.exists(calibrated_path):
+        model = joblib.load(calibrated_path)
 
     # Ensure features match
     for col in feature_names:

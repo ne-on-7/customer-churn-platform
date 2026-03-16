@@ -1,0 +1,82 @@
+{
+  "experiment_id": "exp_20260316_000931_aa4a89",
+  "completed_at": "2026-03-16T00:09:31.851842",
+  "outcomes": {
+    "control": {
+      "n": 726,
+      "churned": 476,
+      "retained": 250,
+      "churn_rate": 0.6556
+    },
+    "treatment": {
+      "n": 726,
+      "churned": 379,
+      "retained": 347,
+      "churn_rate": 0.522
+    }
+  },
+  "statistical_analysis": {
+    "absolute_lift": -0.1336,
+    "relative_lift": -0.2038,
+    "z_statistic": -5.1732,
+    "p_value": 0.0,
+    "confidence_interval_95": [
+      -0.1837,
+      -0.0835
+    ],
+    "is_significant": true,
+    "chi_squared": 26.7651,
+    "chi_squared_p_value": 0.0,
+    "effect_size_cohens_h": -0.2724,
+    "number_needed_to_treat": 7.49
+  },
+  "business_impact": {
+    "customers_retained_by_intervention": 97,
+    "revenue_saved": 37830.0,
+    "intervention_cost": 14520.0,
+    "net_roi": 23310.0,
+    "roi_percent": 160.5
+  },
+  "segment_breakdown": [
+    {
+      "segment": "tenure_bucket=0",
+      "control_n": 516,
+      "treatment_n": 516,
+      "control_churn_rate": 0.6977,
+      "treatment_churn_rate": 0.5698,
+      "relative_lift": -0.1833
+    },
+    {
+      "segment": "tenure_bucket=1",
+      "control_n": 118,
+      "treatment_n": 118,
+      "control_churn_rate": 0.5678,
+      "treatment_churn_rate": 0.4068,
+      "relative_lift": -0.2836
+    },
+    {
+      "segment": "tenure_bucket=2",
+      "control_n": 80,
+      "treatment_n": 81,
+      "control_churn_rate": 0.5625,
+      "treatment_churn_rate": 0.4198,
+      "relative_lift": -0.2538
+    },
+    {
+      "segment": "tenure_bucket=3",
+      "control_n": 12,
+      "treatment_n": 11,
+      "control_churn_rate": 0.3333,
+      "treatment_churn_rate": 0.2727,
+      "relative_lift": -0.1818
+    },
+    {
+      "segment": "contract_risk_score=2",
+      "control_n": 726,
+      "treatment_n": 725,
+      "control_churn_rate": 0.6556,
+      "treatment_churn_rate": 0.5228,
+      "relative_lift": -0.2027
+    }
+  ]
+}

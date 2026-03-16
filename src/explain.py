@@ -72,9 +72,12 @@ def local_explanation(model, model_name: str, X_train: pd.DataFrame,
     if sv.ndim == 3:
         # Take first sample, churn class (index 1)
         sv = sv[0, :, 1]
-    elif isinstance(shap_values, list) and len(shap_values) > 1:
-        # Tree models return [class_0_shap, class_1_shap]
-        sv = np.array(shap_values[1])
+    elif isinstance(shap_values, list):
+        if len(shap_values) > 1:
+            # Tree models return [class_0_shap, class_1_shap]
+            sv = np.array(shap_values[1])
+        else:
+            sv = np.array(shap_values[0])
         if sv.ndim > 1:
             sv = sv[0]
     elif sv.ndim == 2:

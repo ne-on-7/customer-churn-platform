@@ -11,6 +11,7 @@ import joblib
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, roc_auc_score)
+from sklearn.calibration import CalibratedClassifierCV
 
 from src.data_processing import run_pipeline, get_scaler
 from src.feature_engineering import add_engineered_features
@@ -156,6 +157,24 @@ def train_all_models():
     print(f"\nBest model by ROC-AUC: {best_name} ({test_results[best_name]['roc_auc']:.4f})")
     with open(os.path.join(MODELS_DIR, "best_model.txt"), "w") as f:
         f.write(best_name)
+
+    # Calibrate the best model so predicted probabilities reflect true risk
+    print("\n[+] Calibrating best model probabilities (Platt scaling)...")
+    best_model = models[best_name]
+    X_cal = X_train_scaled if best_name in needs_scaling else X_train
+    calibrated = CalibratedClassifierCV(best_model, method="sigmoid", cv=5)
+    calibrated.fit(X_cal, y_train)
+
+    safe_best = best_name.lower().replace(" ", "_")
+    joblib.dump(calibrated, os.path.join(MODELS_DIR, f"{safe_best}_calibrated.pkl"))
+    print(f"    Saved calibrated model: {safe_best}_calibrated.pkl")
+
+    # Show calibration effect on test set
+    X_test_cal = X_test_scaled if best_name in needs_scaling else X_test
+    raw_probas = best_model.predict_proba(X_test_cal)[:, 1]
+    cal_probas = calibrated.predict_proba(X_test_cal)[:, 1]
+    print(f"    Raw  probabilities — mean: {raw_probas.mean():.3f}, median: {np.median(raw_probas):.3f}")
+    print(f"    Calibrated probas  — mean: {cal_probas.mean():.3f}, median: {np.median(cal_probas):.3f}")
 
     return models, all_results, test_results
 
